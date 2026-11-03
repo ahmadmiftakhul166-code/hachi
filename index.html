@@ -2,31 +2,56 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f6f5c">
 <link rel="manifest" href="/manifest.json"><title>HaChi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 :root{--bg:#ece5d8;--me:#cfe8dc;--them:#fff;--ink:#1d2b26;--acc:#1f6f5c;--mut:#6b7a73}
 @media(prefers-color-scheme:dark){:root{--bg:#141a18;--me:#1d4a3d;--them:#232c29;--ink:#e8efec;--acc:#3fae92;--mut:#8fa39b}}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{font:16px/1.4 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
-header{background:var(--acc);color:#fff;padding:12px 16px;font-weight:600;display:flex;justify-content:space-between}
-#st{font-weight:400;font-size:13px;opacity:.85}
+header{background:var(--acc);color:#fff;padding:12px 16px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+header span{font-weight:400;font-size:13px;opacity:.9}header a{color:#fff;text-decoration:none;margin-left:10px;white-space:nowrap}
 #log{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
 .m{max-width:80%;padding:8px 10px;border-radius:12px;background:var(--them);word-wrap:break-word}
 .m.me{align-self:flex-end;background:var(--me)}
 .m b{display:block;font-size:12px;color:var(--acc)}.m time{display:block;font-size:11px;color:var(--mut);text-align:right}
-.m img,.m video{max-width:100%;border-radius:8px;display:block;margin:4px 0}
-.m a{color:var(--acc)}
+.m img,.m video{max-width:100%;border-radius:8px;display:block;margin:4px 0}.m a{color:var(--acc)}
 form{display:flex;gap:4px;align-items:center;padding:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom));background:var(--them)}
 #t{flex:1;font:inherit;padding:10px 14px;border-radius:22px;border:1px solid var(--mut);background:var(--bg);color:var(--ink);min-width:0}
 button{border:0;background:var(--acc);color:#fff;border-radius:50%;width:44px;height:44px;font-size:20px;display:grid;place-items:center;cursor:pointer;flex:none}
 label.b{color:var(--acc);font-size:22px;width:36px;text-align:center;cursor:pointer;flex:none}
 #rec.on{background:#c0392b}
-#name{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:9}
-#name div{display:grid;gap:10px;width:min(300px,85vw)}#name input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--mut)}
-#name button{width:auto;border-radius:10px;height:44px;font-size:16px}
+.ov{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:9;padding:16px}
+.ov>div{display:grid;gap:10px;width:min(320px,90vw);text-align:center}
+.ov input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--mut);background:var(--them);color:var(--ink);text-align:center}
+.ov button{width:auto;border-radius:10px;height:44px;font-size:16px;padding:0 16px}
+.ov .sec{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+#qr{display:grid;place-items:center;background:#fff;padding:12px;border-radius:12px}
+#scan{z-index:10}#sv{width:100%;border-radius:12px;background:#000;aspect-ratio:1;object-fit:cover}.hide{display:none!important}.mut{color:var(--mut);font-size:14px}
 </style></head><body>
-<div id="name"><div><h2 style="margin:0">HaChi</h2><span style="color:var(--mut)">Pakai nama apa di chat ini?</span>
-<input id="nm" maxlength="30" placeholder="mis. Hasan"><button id="go">Mulai</button></div></div>
-<header>HaChi <span id="st">menyambung…</span></header>
+<div id="start" class="ov"><div>
+<h2 style="margin:0">HaChi</h2>
+<input id="nm" maxlength="30" placeholder="Nama kamu">
+<div id="viaLink" class="hide"><button id="enter" style="width:100%">Masuk ke ruang chat</button></div>
+<div id="noRoom"><button id="mk" style="width:100%">📱 Barcode saya</button>
+<p class="mut" style="margin:0">Tampilkan barcode, lalu minta temanmu scan.</p>
+<button id="ss" style="width:100%;margin-top:8px">📷 Scan barcode</button>
+<p class="mut" style="margin:0">Scan barcode dari HP temanmu.</p>
+<p class="mut" style="margin:12px 0 0">atau ketik kode ruang</p>
+<input id="cd" maxlength="32" placeholder="Kode ruang" autocapitalize="none"><button id="jn" class="sec" style="width:100%;margin-top:8px">Masuk</button></div>
+</div></div>
+<div id="scan" class="ov hide"><div>
+<h3 style="margin:0">Scan barcode</h3><video id="sv" playsinline muted></video>
+<p class="mut" id="sm">Arahkan kamera ke barcode HaChi.</p><button id="sc" class="sec">Tutup</button>
+</div></div>
+<div id="inv" class="ov hide"><div>
+<h3 style="margin:0">Undang ke chat</h3>
+<div id="qr"></div>
+<p class="mut">Minta temanmu scan barcode ini dengan kamera HP, atau kirim link-nya.</p>
+<b id="lk" style="word-break:break-all;font-size:14px"></b>
+<button id="cp">Salin link</button><button id="sh" class="sec">Bagikan</button><button id="cl" class="sec">Tutup</button>
+</div></div>
+<header><div>HaChi <span id="st">menyambung…</span></div><div><a href="#" id="sn">📷 Scan</a><a href="#" id="iv">👥 Undang</a><a href="#" id="bk">⬇ Cadangkan</a></div></header>
 <div id="log"></div>
 <form id="f">
 <label class="b" title="Foto/video dari galeri">📎<input id="fl" type="file" multiple hidden></label>
@@ -34,27 +59,61 @@ label.b{color:var(--acc);font-size:22px;width:36px;text-align:center;cursor:poin
 <label class="b" title="Rekam video">🎥<input class="cam" type="file" accept="video/*" capture="user" hidden></label>
 <input id="t" placeholder="Ketik pesan" autocomplete="off"><button id="rec" type="button" title="Voice note">🎤</button><button>➤</button></form>
 <script>
-const $=id=>document.getElementById(id);let me=localStorage.getItem('nm')||'';
-function start(){if(!me)return;localStorage.setItem('nm',me);$('name').remove();connect()}
-$('go').onclick=()=>{me=$('nm').value.trim();start()};if(me)start();
-const seen=new Set(),log=$('log');
-function connect(){const es=new EventSource('/events');
+const $=id=>document.getElementById(id),valid=r=>/^[a-z0-9]{4,32}$/.test(r);
+let me=localStorage.getItem('nm')||'',room=(location.hash.slice(1)||localStorage.getItem('room')||'').toLowerCase();
+if(!valid(room))room='';$('nm').value=me;
+const link=()=>location.origin+'/#'+room;
+function begin(){me=$('nm').value.trim();if(!me){$('nm').focus();return}
+if(!valid(room))return;localStorage.setItem('nm',me);localStorage.setItem('room',room);location.hash=room;$('start').remove();connect();if(fresh)setTimeout(()=>$('iv').click(),50)}
+if(room){$('noRoom').classList.add('hide');$('viaLink').classList.remove('hide');if(me)begin()}
+$('enter').onclick=begin;
+let fresh=false;
+$('mk').onclick=()=>{fresh=true;const a=new Uint8Array(5);crypto.getRandomValues(a);room=Array.from(a,x=>(x%36).toString(36)).join('')+Math.random().toString(36).slice(2,5);begin()};
+$('jn').onclick=()=>{const c=$('cd').value.trim().toLowerCase();if(!valid(c)){alert('Kode 4–32 huruf/angka tanpa spasi.');return}room=c;begin()};
+function codeFrom(raw){let c=String(raw).trim();const i=c.indexOf('#');if(i>=0)c=c.slice(i+1);c=c.toLowerCase();return valid(c)?c:''}
+let stream=null,scanning=false;
+function stopScan(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('scan').classList.add('hide')}
+async function startScan(onFound){
+if(!navigator.mediaDevices||!window.jsQR){alert('Scan barcode butuh koneksi internet dan izin kamera.');return}
+try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})}catch{alert('Izinkan akses kamera dulu.');return}
+const v=$('sv');v.srcObject=stream;await v.play();$('scan').classList.remove('hide');$('sm').textContent='Arahkan kamera ke barcode HaChi.';scanning=true;
+const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+const tick=()=>{if(!scanning)return;if(v.videoWidth){cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);
+const im=cx.getImageData(0,0,cv.width,cv.height),r=jsQR(im.data,cv.width,cv.height);
+if(r&&r.data){const c=codeFrom(r.data);if(c){stopScan();onFound(c);return}$('sm').textContent='Itu bukan barcode HaChi, coba lagi.'}}
+requestAnimationFrame(tick)};tick()}
+$('sc').onclick=stopScan;
+$('ss').onclick=()=>startScan(c=>{room=c;$('noRoom').classList.add('hide');$('viaLink').classList.remove('hide');if($('nm').value.trim())begin();else $('nm').focus()});
+$('sn').onclick=e=>{e.preventDefault();startScan(c=>{localStorage.setItem('room',c);location.hash=c;location.reload()})};
+const seen=new Set(),log=$('log'),all=[];
+function connect(){const es=new EventSource('/events?room='+room);
 es.onopen=()=>$('st').textContent='tersambung';es.onerror=()=>$('st').textContent='terputus, mencoba lagi…';
 es.onmessage=e=>show(JSON.parse(e.data))}
-function show(m){if(seen.has(m.id))return;seen.add(m.id);
+function show(m){if(seen.has(m.id))return;seen.add(m.id);all.push(m);
 const d=document.createElement('div');d.className='m'+(m.from===me?' me':'');
 if(m.from!==me){const b=document.createElement('b');b.textContent=m.from;d.append(b)}
 if(m.kind==='text'){const p=document.createElement('span');p.textContent=m.text;d.append(p)}
 else if(m.kind==='image')d.insertAdjacentHTML('beforeend',`<img loading="lazy" src="${m.url}">`);
 else if(m.kind==='video')d.insertAdjacentHTML('beforeend',`<video controls playsinline preload="metadata" src="${m.url}"></video>`);
 else if(m.kind==='voice')d.insertAdjacentHTML('beforeend',`<audio controls preload="metadata" src="${m.url}"></audio>`);
-if(m.kind!=='text'&&m.kind!=='voice'){const a=document.createElement('a');a.href=m.url;a.download=m.name;a.textContent=m.kind==='file'?'📄 '+m.name:'Simpan';d.append(a)}
+if(m.kind!=='text'){const a=document.createElement('a');a.href=m.url;a.download=m.name;a.textContent=m.kind==='file'?'📄 '+m.name:m.kind==='voice'?'Simpan VN':'Simpan ke galeri';
+if(m.kind==='image'||m.kind==='video')a.onclick=e=>{e.preventDefault();saveMedia(m)};d.append(a)}
 const t=document.createElement('time');t.textContent=new Date(m.t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});d.append(t);
 const near=log.scrollHeight-log.scrollTop-log.clientHeight<200||m.from===me;log.append(d);if(near)log.scrollTop=log.scrollHeight}
+async function saveMedia(m){try{const b=await (await fetch(m.url)).blob();const f=new File([b],m.name,{type:b.type});
+if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e&&e.name==='AbortError')return}
+const a=document.createElement('a');a.href=m.url;a.download=m.name;document.body.append(a);a.click();a.remove()}
+$('bk').onclick=e=>{e.preventDefault();const L=all.map(m=>'['+new Date(m.t).toLocaleString('id-ID')+'] '+m.from+': '+(m.kind==='text'?m.text:'['+m.kind+'] '+m.name+' '+location.origin+m.url)).join('\n');
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([L||'(belum ada chat)'],{type:'text/plain'}));a.download='cadangan-hachi.txt';document.body.append(a);a.click();a.remove()};
+$('iv').onclick=e=>{e.preventDefault();$('inv').classList.remove('hide');$('lk').textContent=link();$('qr').innerHTML='';
+if(window.QRCode)new QRCode($('qr'),{text:link(),width:220,height:220});else $('qr').textContent='(barcode gagal dimuat, kirim link saja)'};
+$('cl').onclick=()=>$('inv').classList.add('hide');
+$('cp').onclick=async()=>{try{await navigator.clipboard.writeText(link());$('cp').textContent='Tersalin ✓'}catch{prompt('Salin link ini:',link())}};
+$('sh').onclick=()=>{if(navigator.share)navigator.share({title:'HaChi',text:'Chat di HaChi',url:link()}).catch(()=>{});else $('cp').click()};
 $('f').onsubmit=e=>{e.preventDefault();const text=$('t').value.trim();if(!text)return;$('t').value='';
-fetch('/text',{method:'POST',body:JSON.stringify({from:me,text})})};
+fetch('/text',{method:'POST',body:JSON.stringify({room,from:me,text})})};
 async function up(file,kind){const tip=document.createElement('div');tip.className='m me';tip.textContent='Mengirim '+file.name+'…';log.append(tip);log.scrollTop=log.scrollHeight;
-try{await fetch('/file',{method:'POST',headers:{'x-name':encodeURIComponent(file.name),'x-from':encodeURIComponent(me),'x-kind':kind||'','Content-Type':file.type||'application/octet-stream'},body:file});tip.remove()}
+try{await fetch('/file',{method:'POST',headers:{'x-room':room,'x-name':encodeURIComponent(file.name),'x-from':encodeURIComponent(me),'x-kind':kind||'','Content-Type':file.type||'application/octet-stream'},body:file});tip.remove()}
 catch{tip.textContent='Gagal kirim '+file.name}}
 for(const i of document.querySelectorAll('#fl,.cam'))i.onchange=async e=>{for(const f of e.target.files)await up(f);e.target.value=''};
 let mr,chunks=[];$('rec').onclick=async()=>{
