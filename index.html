@@ -1,0 +1,68 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f6f5c">
+<link rel="manifest" href="/manifest.json"><title>HaChi</title>
+<style>
+:root{--bg:#ece5d8;--me:#cfe8dc;--them:#fff;--ink:#1d2b26;--acc:#1f6f5c;--mut:#6b7a73}
+@media(prefers-color-scheme:dark){:root{--bg:#141a18;--me:#1d4a3d;--them:#232c29;--ink:#e8efec;--acc:#3fae92;--mut:#8fa39b}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:16px/1.4 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+header{background:var(--acc);color:#fff;padding:12px 16px;font-weight:600;display:flex;justify-content:space-between}
+#st{font-weight:400;font-size:13px;opacity:.85}
+#log{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:80%;padding:8px 10px;border-radius:12px;background:var(--them);word-wrap:break-word}
+.m.me{align-self:flex-end;background:var(--me)}
+.m b{display:block;font-size:12px;color:var(--acc)}.m time{display:block;font-size:11px;color:var(--mut);text-align:right}
+.m img,.m video{max-width:100%;border-radius:8px;display:block;margin:4px 0}
+.m a{color:var(--acc)}
+form{display:flex;gap:4px;align-items:center;padding:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom));background:var(--them)}
+#t{flex:1;font:inherit;padding:10px 14px;border-radius:22px;border:1px solid var(--mut);background:var(--bg);color:var(--ink);min-width:0}
+button{border:0;background:var(--acc);color:#fff;border-radius:50%;width:44px;height:44px;font-size:20px;display:grid;place-items:center;cursor:pointer;flex:none}
+label.b{color:var(--acc);font-size:22px;width:36px;text-align:center;cursor:pointer;flex:none}
+#rec.on{background:#c0392b}
+#name{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:9}
+#name div{display:grid;gap:10px;width:min(300px,85vw)}#name input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--mut)}
+#name button{width:auto;border-radius:10px;height:44px;font-size:16px}
+</style></head><body>
+<div id="name"><div><h2 style="margin:0">HaChi</h2><span style="color:var(--mut)">Pakai nama apa di chat ini?</span>
+<input id="nm" maxlength="30" placeholder="mis. Hasan"><button id="go">Mulai</button></div></div>
+<header>HaChi <span id="st">menyambung…</span></header>
+<div id="log"></div>
+<form id="f">
+<label class="b" title="Foto/video dari galeri">📎<input id="fl" type="file" multiple hidden></label>
+<label class="b" title="Selfie / foto">📷<input class="cam" type="file" accept="image/*" capture="user" hidden></label>
+<label class="b" title="Rekam video">🎥<input class="cam" type="file" accept="video/*" capture="user" hidden></label>
+<input id="t" placeholder="Ketik pesan" autocomplete="off"><button id="rec" type="button" title="Voice note">🎤</button><button>➤</button></form>
+<script>
+const $=id=>document.getElementById(id);let me=localStorage.getItem('nm')||'';
+function start(){if(!me)return;localStorage.setItem('nm',me);$('name').remove();connect()}
+$('go').onclick=()=>{me=$('nm').value.trim();start()};if(me)start();
+const seen=new Set(),log=$('log');
+function connect(){const es=new EventSource('/events');
+es.onopen=()=>$('st').textContent='tersambung';es.onerror=()=>$('st').textContent='terputus, mencoba lagi…';
+es.onmessage=e=>show(JSON.parse(e.data))}
+function show(m){if(seen.has(m.id))return;seen.add(m.id);
+const d=document.createElement('div');d.className='m'+(m.from===me?' me':'');
+if(m.from!==me){const b=document.createElement('b');b.textContent=m.from;d.append(b)}
+if(m.kind==='text'){const p=document.createElement('span');p.textContent=m.text;d.append(p)}
+else if(m.kind==='image')d.insertAdjacentHTML('beforeend',`<img loading="lazy" src="${m.url}">`);
+else if(m.kind==='video')d.insertAdjacentHTML('beforeend',`<video controls playsinline preload="metadata" src="${m.url}"></video>`);
+else if(m.kind==='voice')d.insertAdjacentHTML('beforeend',`<audio controls preload="metadata" src="${m.url}"></audio>`);
+if(m.kind!=='text'&&m.kind!=='voice'){const a=document.createElement('a');a.href=m.url;a.download=m.name;a.textContent=m.kind==='file'?'📄 '+m.name:'Simpan';d.append(a)}
+const t=document.createElement('time');t.textContent=new Date(m.t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});d.append(t);
+const near=log.scrollHeight-log.scrollTop-log.clientHeight<200||m.from===me;log.append(d);if(near)log.scrollTop=log.scrollHeight}
+$('f').onsubmit=e=>{e.preventDefault();const text=$('t').value.trim();if(!text)return;$('t').value='';
+fetch('/text',{method:'POST',body:JSON.stringify({from:me,text})})};
+async function up(file,kind){const tip=document.createElement('div');tip.className='m me';tip.textContent='Mengirim '+file.name+'…';log.append(tip);log.scrollTop=log.scrollHeight;
+try{await fetch('/file',{method:'POST',headers:{'x-name':encodeURIComponent(file.name),'x-from':encodeURIComponent(me),'x-kind':kind||'','Content-Type':file.type||'application/octet-stream'},body:file});tip.remove()}
+catch{tip.textContent='Gagal kirim '+file.name}}
+for(const i of document.querySelectorAll('#fl,.cam'))i.onchange=async e=>{for(const f of e.target.files)await up(f);e.target.value=''};
+let mr,chunks=[];$('rec').onclick=async()=>{
+if(mr&&mr.state==='recording'){mr.stop();return}
+if(!navigator.mediaDevices){alert('Voice note butuh HTTPS (link https://).');return}
+try{const s=await navigator.mediaDevices.getUserMedia({audio:true});mr=new MediaRecorder(s);chunks=[];
+mr.ondataavailable=e=>chunks.push(e.data);
+mr.onstop=()=>{s.getTracks().forEach(t=>t.stop());$('rec').classList.remove('on');const type=mr.mimeType||'audio/mp4';
+up(new File(chunks,'vn.'+(type.includes('webm')?'webm':'m4a'),{type}),'voice')};
+mr.start();$('rec').classList.add('on')}catch{alert('Izinkan akses mikrofon dulu.')}};
+</script></body></html>
