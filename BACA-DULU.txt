@@ -1,0 +1,12 @@
+HaChi - cara pasang online (sekali saja, gratis)
+
+1. Buka github.com, daftar, lalu "New repository" -> nama: hachi -> Create.
+2. Klik "uploading an existing file", seret SEMUA isi folder ini
+   (server.js, package.json, render.yaml, folder public) -> Commit changes.
+3. Buka render.com, login pakai GitHub.
+4. Klik New -> Blueprint -> pilih repository hachi -> Apply.
+   (Semua pengaturan sudah otomatis dari file render.yaml.)
+5. Tunggu beberapa menit sampai muncul link https://hachi-xxxx.onrender.com
+6. Buka link itu di iPhone (Safari) dan Android (Chrome).
+   iPhone: Share -> Add to Home Screen. Android: Install app.
+7. Mau barcode? Tempel link ke qr-code-generator.com lalu scan.
